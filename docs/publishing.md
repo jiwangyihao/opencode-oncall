@@ -1,16 +1,16 @@
 # opencode-oncall 发布流程
 
-本文档只描述 `opencode-oncall@0.1.4` 的发布链路。执行任何外部发布动作前，必须先获得明确授权；未获授权时只停在本地可审查状态。
+本文档只描述 `opencode-oncall@0.1.5` 的发布链路。执行任何外部发布动作前，必须先获得明确授权；未获授权时只停在本地可审查状态。
 
 ## 手动首发
 
 首发必须先完成本地 fresh 验证，再初始化新仓库并发布。推荐顺序如下：
 
-1. 在当前仓库根目录中确认 package metadata、README、Release Notes 和 workflow 都指向 `opencode-oncall@0.1.4`。
+1. 在当前仓库根目录中确认 package metadata、README、Release Notes 和 workflow 都指向 `opencode-oncall@0.1.5`。
 2. 运行发布前 fresh 验证，确认 build、typecheck、测试、pack dry-run、tarball install / import smoke 和 OpenClaw dry-run 都有当前输出。
 3. 获得授权后再执行 `git init`、initial commit、远端创建、tag、npm publish 和 GitHub Release。所有 git 命令都按上游流程要求逐条设置 `GIT_MASTER=1`。
 4. 手动首发的 npm 发布命令为 `npm publish --access public`。发布成功后再配置 npm Trusted Publisher，让后续版本由 GitHub Release workflow 通过 OIDC 发布。
-5. GitHub Release 正文必须来自 `docs/release-notes-v0.1.4.md`，不能临时改写成 `Summary + Test Plan`。
+5. GitHub Release 正文必须来自 `docs/release-notes-v0.1.5.md`，不能临时改写成 `Summary + Test Plan`。
 
 ## 发布前 fresh 验证
 
@@ -60,11 +60,11 @@ try {
 验证远端状态：
 
 ```powershell
-npm view opencode-oncall@0.1.4 version
-gh release view v0.1.4 --repo jiwangyihao/opencode-oncall --json body,url
+npm view opencode-oncall@0.1.5 version
+gh release view v0.1.5 --repo jiwangyihao/opencode-oncall --json body,url
 ```
 
-只有 `npm view opencode-oncall@0.1.4 version` 返回 `0.1.4`，才能把同版本 publish skipped 视为正常。
+只有 `npm view opencode-oncall@0.1.5 version` 返回 `0.1.5`，才能把同版本 publish skipped 视为正常。
 
 ## 后续 GitHub Actions 发布
 
@@ -81,22 +81,22 @@ workflow 如果发现同版本已经在 npm 存在，可以跳过 publish；但 
 
 ## GitHub Release 创建与验证
 
-v0.1.4 的 Release 创建命令应使用固定 notes 文件：
+v0.1.5 的 Release 创建命令应使用固定 notes 文件：
 
 ```powershell
-gh release create v0.1.4 --notes-file docs/release-notes-v0.1.4.md --repo jiwangyihao/opencode-oncall --target master --title "opencode-oncall v0.1.4"
+gh release create v0.1.5 --notes-file docs/release-notes-v0.1.5.md --repo jiwangyihao/opencode-oncall --target master --title "opencode-oncall v0.1.5"
 ```
 
 创建后立刻回读正文和 URL：
 
 ```powershell
-gh release view v0.1.4 --repo jiwangyihao/opencode-oncall --json body,url
+gh release view v0.1.5 --repo jiwangyihao/opencode-oncall --json body,url
 ```
 
 检查正文包含一句价值导语、`## 适合谁升级`、`## 你会看到的变化`、`## 升级方式`，且升级命令为：
 
 ```bash
-opencode plugin opencode-oncall@0.1.4 --force -g
+opencode plugin opencode-oncall@0.1.5 --force -g
 ```
 
 ## 部分失败恢复
@@ -104,10 +104,10 @@ opencode plugin opencode-oncall@0.1.4 --force -g
 如果 `npm publish` 已经成功，但 GitHub Release 创建失败，不要重新发布同一个 npm 版本。只修复 GitHub Release 缺口，运行或修复以下命令并做远端验证：
 
 ```powershell
-gh release create v0.1.4 --notes-file docs/release-notes-v0.1.4.md --repo jiwangyihao/opencode-oncall --target master --title "opencode-oncall v0.1.4"
-npm view opencode-oncall@0.1.4 version
-gh release view v0.1.4 --repo jiwangyihao/opencode-oncall --json body,url
+gh release create v0.1.5 --notes-file docs/release-notes-v0.1.5.md --repo jiwangyihao/opencode-oncall --target master --title "opencode-oncall v0.1.5"
+npm view opencode-oncall@0.1.5 version
+gh release view v0.1.5 --repo jiwangyihao/opencode-oncall --json body,url
 ```
 
-如果 GitHub Release 已存在，但 OIDC publish 失败，先修复 npm Trusted Publisher 设置或 `.github/workflows/release.yml`，再重新运行同一个 release workflow。只有当 `npm view opencode-oncall@0.1.4 version` 返回 `0.1.4` 时，workflow 中的 publish skipped 才能视为正常；否则必须继续修复 OIDC 发布链路，而不是创建新版本绕过问题。
+如果 GitHub Release 已存在，但 OIDC publish 失败，先修复 npm Trusted Publisher 设置或 `.github/workflows/release.yml`，再重新运行同一个 release workflow。只有当 `npm view opencode-oncall@0.1.5 version` 返回 `0.1.5` 时，workflow 中的 publish skipped 才能视为正常；否则必须继续修复 OIDC 发布链路，而不是创建新版本绕过问题。
 
