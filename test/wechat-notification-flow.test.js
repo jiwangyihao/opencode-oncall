@@ -28,8 +28,26 @@ function createBrokerEndpoint(tempDir) {
   if (process.platform === "win32") {
     return `\\\\.\\pipe\\wechat-broker-notification-${process.pid}-${suffix}`
   }
-  return path.join(tempDir, `wechat-broker-notification-${suffix}.sock`)
+  const endpoint = path.join(tempDir, `wechat-broker-notification-${suffix}.sock`)
+  return Buffer.byteLength(endpoint) <= 100
+    ? endpoint
+    : path.join(os.tmpdir(), `wb-notif-${process.pid}-${suffix}.sock`)
 }
+
+test("notification broker endpoint 在 POSIX 长路径下回退到短 socket 路径", () => {
+  const descriptor = Object.getOwnPropertyDescriptor(process, "platform")
+  Object.defineProperty(process, "platform", { value: "linux" })
+
+  try {
+    const tempDir = path.join(os.tmpdir(), "wechat-notification-live-question-opened-endpoint-".repeat(3))
+    const endpoint = createBrokerEndpoint(tempDir)
+
+    assert.equal(Buffer.byteLength(endpoint) <= 100, true)
+    assert.equal(path.dirname(endpoint), os.tmpdir())
+  } finally {
+    Object.defineProperty(process, "platform", descriptor)
+  }
+})
 
 async function waitFor(assertion, timeoutMs = 3000, intervalMs = 20) {
   const deadline = Date.now() + timeoutMs
