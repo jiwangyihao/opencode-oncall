@@ -13,7 +13,7 @@
 首发发布完成后，使用固定版本命令安装或升级：
 
 ```bash
-opencode plugin opencode-oncall@0.1.2 --force -g
+opencode plugin opencode-oncall@0.1.3 --force -g
 ```
 
 如果你只想把插件安装到当前项目的 `.opencode`，可以去掉 `-g`；否则建议保留全局安装参数，让平时实际使用的 OpenCode 实例拿到同一版本。
@@ -43,7 +43,7 @@ npm run wechat:smoke:real-account -- --dry-run
 
 - 发布流程：[`docs/publishing.md`](docs/publishing.md)
 - Release Notes 模板：[`docs/release-notes-template.md`](docs/release-notes-template.md)
-- v0.1.2 发布说明：[`docs/release-notes-v0.1.2.md`](docs/release-notes-v0.1.2.md)
+- v0.1.3 发布说明：[`docs/release-notes-v0.1.3.md`](docs/release-notes-v0.1.3.md)
 
 ## 许可证
 
