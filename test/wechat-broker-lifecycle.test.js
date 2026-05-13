@@ -328,9 +328,9 @@ async function killProcessByPid(pid, signal = "SIGTERM", timeoutMs = 5000) {
 }
 
 async function waitForExit(child, timeoutMs = 5000) {
-  if (child.exitCode !== null || child.signalCode !== null) {
-    return { code: child.exitCode, signal: child.signalCode }
-  }
+	if (child.exitCode !== null || child.signalCode !== null) {
+		return { code: child.exitCode, signal: child.signalCode }
+	}
 
   return new Promise((resolve, reject) => {
     const timer = setTimeout(() => {
@@ -341,24 +341,32 @@ async function waitForExit(child, timeoutMs = 5000) {
       clearTimeout(timer)
       resolve({ code, signal })
     })
-  })
+	})
+}
+
+async function requestChildExit(child) {
+	if (child.exitCode !== null || child.signalCode !== null) {
+		return
+	}
+
+	if (child.stdin && !child.stdin.destroyed) {
+		child.stdin.end()
+	}
+
+	await waitForExit(child, 5000)
 }
 
 async function terminateChild(child) {
-  if (child.exitCode !== null || child.signalCode !== null) {
-    return
-  }
+	if (child.exitCode !== null || child.signalCode !== null) {
+		return
+	}
 
-  if (child.stdin && !child.stdin.destroyed) {
-    child.stdin.end()
-  }
-
-  try {
-    await waitForExit(child, 2000)
-    return
-  } catch {
-    // continue with signal fallback
-  }
+	try {
+		await requestChildExit(child)
+		return
+	} catch {
+		// continue with signal fallback
+	}
 
   child.kill("SIGINT")
   try {
@@ -797,8 +805,8 @@ test("broker-entry 空闲超时后在无实例且无 open request 时自动退�
     },
   })
 
-  try {
-    await waitForBrokerMetadata(brokerJsonPath)
+	try {
+		await waitForBrokerMetadata(brokerJsonPath)
     const exited = await waitForExit(child, 5_000)
     assert.equal(exited.code, 0)
   } finally {
@@ -843,10 +851,10 @@ test("broker-entry 空闲超时期间若仍有 open request 则保持存活", as
   try {
     await waitForBrokerMetadata(brokerJsonPath)
     await assertProcessStaysAlive(child.pid, 400)
-  } finally {
-    await terminateChild(child)
-    childProcesses.delete(child)
-  }
+	} finally {
+		await requestChildExit(child)
+		childProcesses.delete(child)
+	}
 })
 
 test("broker-entry 空闲计时期间若实例重新注册则取消退出，断开后重新进入空闲并最终退出", async () => {
@@ -864,8 +872,8 @@ test("broker-entry 空闲计时期间若实例重新注册则取消退出，断�
     },
   })
 
-  try {
-    await waitForBrokerMetadata(brokerJsonPath)
+	try {
+		await waitForBrokerMetadata(brokerJsonPath)
     await delay(80)
 
     const bridge = await connectLiveBridgeClient(endpoint, {
@@ -955,10 +963,10 @@ test("broker-entry 启动时会立刻把过期 connected snapshot 标记为 stal
       5_000,
     )
     assert.match(diagnosticsRaw, /"code":"instanceStale"/)
-  } finally {
-    await terminateChild(child)
-    childProcesses.delete(child)
-  }
+	} finally {
+		await requestChildExit(child)
+		childProcesses.delete(child)
+	}
 })
 
 test("broker-entry 启动时会立刻 purge 过期 cleaned request", async () => {
