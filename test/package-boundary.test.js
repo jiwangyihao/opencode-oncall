@@ -245,7 +245,7 @@ test("package metadata targets opencode-oncall", async () => {
 		await readFile(new URL("../package.json", import.meta.url), "utf8"),
 	);
 	assert.equal(pkg.name, "opencode-oncall");
-	assert.equal(pkg.version, "0.1.3");
+	assert.equal(pkg.version, "0.1.4");
 	assert.equal(
 		pkg.description,
 		"Remote on-call UX plugin for OpenCode over WeChat",
@@ -284,7 +284,7 @@ test("npm pack contains only the public package boundary", async () => {
 		const files = packed.files.map((file) => file.path).sort();
 
 		assert.equal(packed.name, "opencode-oncall");
-		assert.equal(packed.version, "0.1.3");
+		assert.equal(packed.version, "0.1.4");
 		assert.equal(files.includes("package.json"), true);
 		assert.equal(files.includes("README.md"), true);
 		assert.equal(files.includes("LICENSE"), true);
