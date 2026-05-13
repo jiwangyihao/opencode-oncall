@@ -1,0 +1,74 @@
+{
+  "name": "opencode-oncall",
+  "version": "0.1.0",
+  "description": "Remote on-call UX plugin for OpenCode over WeChat",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "type": "module",
+  "license": "MPL-2.0",
+  "author": "jiwangyihao",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jiwangyihao/opencode-oncall.git"
+  },
+  "homepage": "https://github.com/jiwangyihao/opencode-oncall#readme",
+  "bugs": {
+    "url": "https://github.com/jiwangyihao/opencode-oncall/issues"
+  },
+  "keywords": [
+    "opencode",
+    "plugin",
+    "oncall",
+    "wechat",
+    "remote-control"
+  ],
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "files": [
+    "dist/",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "prebuild": "node scripts/clean-dist.mjs",
+    "build": "tsc -p tsconfig.build.json",
+    "wechat:smoke:self-test": "npm run build && node --input-type=module -e \"import('./dist/wechat/compat/openclaw-smoke.js').then(async (m) => { const results = await m.runOpenClawSmoke('self-test'); console.log(JSON.stringify(results, null, 2)); })\"",
+    "wechat:smoke:real-account": "npm run build && node --input-type=module -e \"import('./dist/wechat/compat/openclaw-smoke.js').then(async (m) => { const dryRun = process.argv.includes('--dry-run'); const results = await m.runOpenClawSmoke('real-account', { dryRun }); console.log(JSON.stringify(results, null, 2)); })\" --",
+    "wechat:smoke:guided": "npm run build && node dist/wechat/compat/openclaw-guided-smoke.js",
+    "test:wechat-real-host-gate": "npm run build && node --test test/wechat-opencode-real-host-gate.test.js",
+    "test:serial:wechat-status-flow:early": "node scripts/run-status-flow-phase.mjs early",
+    "test:serial:wechat-ws-core": "node --test --test-concurrency=1 test/wechat-ws-protocol.test.js test/wechat-broker-state-store.test.js test/wechat-broker-ws-lifecycle.test.js",
+    "test:serial:wechat-broker-lifecycle": "node --test --test-concurrency=1 test/wechat-broker-lifecycle.test.js",
+    "test:serial:wechat-notification-flow": "node --test --test-concurrency=1 test/wechat-notification-flow.test.js test/wechat-notification-dispatcher.test.js test/wechat-notification-store.test.js",
+    "test:serial:wechat-openclaw-task3": "node --test --test-concurrency=1 test/wechat-openclaw-task3.test.js",
+    "test:serial:plugin": "node --test --test-concurrency=1 test/index-exports.test.js test/wechat-plugin-entry.test.js test/wechat-plugin-hooks-status.test.js",
+    "test:serial:wechat-status-flow:late": "node scripts/run-status-flow-phase.mjs late",
+    "test:parallel:shard": "node --test test/package-boundary.test.js test/wechat-bind-flow.test.js test/wechat-debug-bundle.test.js test/wechat-dead-letter-store.test.js test/wechat-jiti-loader.test.js test/wechat-menu-actions.test.js test/wechat-migration.test.js test/wechat-openclaw-account-helpers.test.js test/wechat-openclaw-guided-smoke.test.js test/wechat-openclaw-public-helpers.test.js test/wechat-openclaw-qr-gateway.test.js test/wechat-openclaw-smoke.test.js test/wechat-openclaw-sync-buf.test.js test/wechat-openclaw-updates-send.test.js test/wechat-operator-store.test.js test/wechat-plugin-hooks-status.test.js test/wechat-qrcode-terminal-loader.test.js test/wechat-request-store.test.js test/wechat-session-digest.test.js test/wechat-state-paths.test.js test/wechat-state-root.test.js test/wechat-surface-driver.test.js test/wechat-token-store-atomic-write.test.js test/wechat-token-store.test.js",
+    "test": "npm run build && npm run test:serial:wechat-status-flow:early && npm run test:serial:wechat-ws-core && npm run test:serial:wechat-broker-lifecycle && npm run test:serial:wechat-notification-flow && npm run test:serial:wechat-openclaw-task3 && npm run test:serial:plugin && npm run test:serial:wechat-status-flow:late && npm run test:parallel:shard",
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "npm run build"
+  },
+  "dependencies": {
+    "@opencode-ai/plugin": "^1.2.26",
+    "@opencode-ai/sdk": "^1.2.26",
+    "@tencent-weixin/openclaw-weixin": "2.0.1",
+    "fflate": "^0.8.2",
+    "openclaw": "2026.3.22",
+    "xdg-basedir": "^5.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.1",
+    "typescript": "^5.0.0"
+  },
+  "directories": {
+    "doc": "docs",
+    "test": "test"
+  }
+}
