@@ -68,14 +68,37 @@ export function resolveCreateJiti(namespace: JitiNamespace): CreateJiti {
   throw new Error(`[wechat-compat] createJiti export unavailable (keys=${topLevelKeys}; default=${defaultKeys})`)
 }
 
+function isWindowsAbsolutePath(filePath: string): boolean {
+  return /^[A-Za-z]:[\\/]/.test(filePath)
+}
+
+function joinSiblingFromResolvedPackage(packageJsonPath: string, ...segments: string[]): string {
+  const pathImpl = isWindowsAbsolutePath(packageJsonPath) ? path.win32 : path
+  return pathImpl.join(pathImpl.dirname(packageJsonPath), ...segments)
+}
+
+function encodeFileURLPathSegment(segment: string): string {
+  return encodeURIComponent(segment)
+}
+
+function pathToFileURLHref(filePath: string): string {
+  if (!isWindowsAbsolutePath(filePath)) {
+    return pathToFileURL(filePath).href
+  }
+
+  const normalized = path.win32.normalize(filePath).replace(/\\/g, "/")
+  const [drive, ...segments] = normalized.split("/")
+  return `file:///${drive}/${segments.map(encodeFileURLPathSegment).join("/")}`
+}
+
 export function resolveJitiEsmEntry(resolveImpl: JitiResolve = createRequire(import.meta.url).resolve): string {
   const packageJsonPath = resolveImpl("jiti/package.json")
-  return pathToFileURL(path.join(path.dirname(packageJsonPath), "lib", "jiti.cjs")).href
+  return pathToFileURLHref(joinSiblingFromResolvedPackage(packageJsonPath, "lib", "jiti.cjs"))
 }
 
 export function resolveJitiCjsEntry(resolveImpl: JitiResolve = createRequire(import.meta.url).resolve): string {
   const packageJsonPath = resolveImpl("jiti/package.json")
-  return path.join(path.dirname(packageJsonPath), "lib", "jiti.cjs")
+  return joinSiblingFromResolvedPackage(packageJsonPath, "lib", "jiti.cjs")
 }
 
 function onJitiError(error: unknown): never {
@@ -155,7 +178,7 @@ export async function loadModuleWithTsFallback(
     jitiOptions?: Record<string, unknown>
   } = {},
 ): Promise<unknown> {
-  const moduleUrl = pathToFileURL(modulePath).href
+  const moduleUrl = pathToFileURLHref(modulePath)
   const importImpl = options.importImpl ?? nativeImport
 
   // Even under Bun, TS entrypoints inside node_modules can transitively hit ESM/CJS
