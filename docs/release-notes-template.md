@@ -1,4 +1,4 @@
-opencode-oncall@0.1.0 让 OpenCode 远程值守 UX 脱离 Copilot 账号切换包，作为独立插件安装和验证。
+opencode-oncall@0.1.1 让 OpenCode 远程值守 UX 的 Linux 发布验证也能稳定覆盖长临时路径下的 broker 通信。
 
 ## 适合谁升级
 
@@ -9,10 +9,11 @@ opencode-oncall@0.1.0 让 OpenCode 远程值守 UX 脱离 Copilot 账号切换�
 
 - 远程值守 UX 现在由独立插件 `opencode-oncall` 承载，不再跟随 Copilot 账号切换包发布。
 - 安装命令固定到明确版本，便于排查 OpenCode 插件缓存和环境差异。
-- OpenClaw smoke、debug bundle 和发布验证归入远程值守插件自己的发布链路。
+- OpenClaw smoke、debug bundle 和发布验证继续归入远程值守插件自己的发布链路。
+- POSIX broker endpoint 会避开过长 Unix socket 路径，减少 GitHub Actions 与长临时目录下的 `listen EINVAL`。
 
 ## 升级方式
 
 ```bash
-opencode plugin opencode-oncall@0.1.0 --force -g
+opencode plugin opencode-oncall@0.1.1 --force -g
 ```
