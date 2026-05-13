@@ -1,9 +1,11 @@
 import net from "node:net"
+import os from "node:os"
 import path from "node:path"
 
 type BrokerEndpointOptions = {
   platform?: NodeJS.Platform
   stateRoot?: string
+  tmpdir?: string
   now?: () => number
   random?: () => number
 }
@@ -23,6 +25,10 @@ function isNonEmptyString(value: unknown): value is string {
   return typeof value === "string" && value.trim().length > 0
 }
 
+function createBrokerSocketPath(root: string, suffix: string): string {
+  return path.join(root, `broker-${suffix}.sock`)
+}
+
 export function isTcpBrokerEndpoint(endpoint: string): boolean {
   return endpoint.startsWith("tcp://")
 }
@@ -30,6 +36,7 @@ export function isTcpBrokerEndpoint(endpoint: string): boolean {
 export function createDefaultBrokerEndpoint(options: BrokerEndpointOptions = {}): string {
   const platform = options.platform ?? process.platform
   const stateRoot = options.stateRoot ?? "."
+  const tmpdir = options.tmpdir ?? os.tmpdir()
   const now = options.now ?? Date.now
   const random = options.random ?? Math.random
   const suffix = `${now()}-${random().toString(16).slice(2)}`
@@ -38,7 +45,12 @@ export function createDefaultBrokerEndpoint(options: BrokerEndpointOptions = {})
     return "tcp://127.0.0.1:0"
   }
 
-  return path.join(stateRoot, `broker-${suffix}.sock`)
+  const stateRootEndpoint = createBrokerSocketPath(stateRoot, suffix)
+  if (Buffer.byteLength(stateRootEndpoint) <= 100) {
+    return stateRootEndpoint
+  }
+
+  return createBrokerSocketPath(tmpdir, suffix)
 }
 
 export function parseBrokerEndpoint(endpoint: string): ParsedBrokerEndpoint {

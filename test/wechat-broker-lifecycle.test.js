@@ -57,7 +57,11 @@ function createBrokerEndpoint(tempDir) {
   if (process.platform === "win32") {
     return `\\\\.\\pipe\\wechat-broker-${process.pid}-${suffix}`
   }
-  return path.join(tempDir, `wechat-broker-${suffix}.sock`)
+
+  const endpoint = path.join(tempDir, `wechat-broker-${suffix}.sock`)
+  return Buffer.byteLength(endpoint) <= 100
+    ? endpoint
+    : path.join(os.tmpdir(), `wb-${process.pid}-${suffix}.sock`)
 }
 
 function wechatStateRootForSandbox(sandboxConfigHome) {
@@ -1895,6 +1899,26 @@ test("Windows Node runtime 下默认 broker endpoint 也使用 tcp 回环地址"
     }),
     /^tcp:\/\/127\.0\.0\.1:0$/,
   )
+})
+
+test("POSIX 默认 broker endpoint 在 stateRoot 过长时应回退到短路径", async () => {
+  const launcher = await import(`${DIST_BROKER_LAUNCHER_MODULE}?reload=${Date.now()}`)
+  const longStateRoot = path.join(
+    "/tmp",
+    "wechat-status-flow-fallback-reconnect-integrated-E0y3Dq",
+  )
+
+  const endpoint = launcher.createDefaultBrokerEndpoint({
+    platform: "linux",
+    stateRoot: longStateRoot,
+    tmpdir: "/tmp",
+    now: () => 1_778_685_178_522,
+    random: () => 0.3190928467906949,
+  })
+
+  assert.equal(endpoint.startsWith("tcp://"), false)
+  assert.equal(endpoint.startsWith(longStateRoot), false)
+  assert.equal(Buffer.byteLength(endpoint) <= 100, true, endpoint)
 })
 
 test("broker-entry 支持 tcp endpoint 并把 broker.json 写成真实监听地址", async () => {
