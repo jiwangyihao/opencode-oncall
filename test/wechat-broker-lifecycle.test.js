@@ -232,32 +232,69 @@ async function sendLiveBridgeEvent(bridgeClient, options) {
   return eventSeq
 }
 
-async function createQuestionBridgeLifecycle(endpoint, questionList, label) {
+async function createQuestionBridgeLifecycle(endpoint, questionList, label, options = {}) {
   const bridgeModule = await import(`../dist/wechat/bridge.js?reload=${Date.now()}-${label}`)
   const brokerClient = await import(`${DIST_BROKER_CLIENT_MODULE}?reload=${Date.now()}-${label}`)
+  const previousStateRoot = process.env.WECHAT_STATE_ROOT_OVERRIDE
+  let restoredStateRoot = false
 
-  return bridgeModule.createWechatBridgeLifecycle({
-    statusCollectionEnabled: true,
-    heartbeatIntervalMs: 60_000,
-    directory: "/repo/wechat-broker-lifecycle",
-    client: {
-      session: {
-        list: async () => [],
-        status: async () => ({}),
-        todo: async () => [],
-        messages: async () => [],
+  const restoreStateRoot = () => {
+    if (restoredStateRoot || typeof options.stateRoot !== "string") {
+      return
+    }
+    restoredStateRoot = true
+    if (previousStateRoot === undefined) {
+      delete process.env.WECHAT_STATE_ROOT_OVERRIDE
+    } else {
+      process.env.WECHAT_STATE_ROOT_OVERRIDE = previousStateRoot
+    }
+  }
+
+  if (typeof options.stateRoot === "string") {
+    process.env.WECHAT_STATE_ROOT_OVERRIDE = options.stateRoot
+  }
+
+  try {
+    const lifecycle = await bridgeModule.createWechatBridgeLifecycle({
+      statusCollectionEnabled: true,
+      heartbeatIntervalMs: 60_000,
+      directory: "/repo/wechat-broker-lifecycle",
+      client: {
+        session: {
+          list: async () => [],
+          status: async () => ({}),
+          todo: async () => [],
+          messages: async () => [],
+        },
+        question: {
+          list: questionList,
+        },
+        permission: {
+          list: async () => [],
+        },
       },
-      question: {
-        list: questionList,
+    }, {
+      connectOrSpawnBrokerImpl: async () => ({ endpoint }),
+      connectImpl: async (brokerEndpoint) => brokerClient.connect(brokerEndpoint),
+    })
+
+    if (typeof options.stateRoot !== "string") {
+      return lifecycle
+    }
+
+    return {
+      close: async () => {
+        try {
+          await lifecycle.close()
+        } finally {
+          restoreStateRoot()
+        }
       },
-      permission: {
-        list: async () => [],
-      },
-    },
-  }, {
-    connectOrSpawnBrokerImpl: async () => ({ endpoint }),
-    connectImpl: async (brokerEndpoint) => brokerClient.connect(brokerEndpoint),
-  })
+    }
+  } catch (error) {
+    restoreStateRoot()
+    throw error
+  }
 }
 
 function spawnBrokerEntry({ endpoint, xdgConfigHome, extraEnv = {} }) {
@@ -2534,7 +2571,7 @@ test("broker 重复 question candidate 不会膨胀成多条 authoritative activ
         sessionID: "session-merge-1",
         questions: [{ header: "Merge", question: "Need merge" }],
       },
-    ], "question-merge")
+    ], "question-merge", { stateRoot: wechatStateRoot })
 
     try {
       const snapshot = await waitForBrokerStateSnapshot(
@@ -2640,7 +2677,7 @@ test("broker 不会吞掉不同 question candidate，它们会各自保留 autho
         sessionID: "session-distinct-2",
         questions: [{ header: "Distinct", question: "Second" }],
       },
-    ], "question-distinct")
+    ], "question-distinct", { stateRoot: wechatStateRoot })
 
     try {
       const snapshot = await waitForBrokerStateSnapshot(
