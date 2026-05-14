@@ -1,4 +1,11 @@
-# OpenCode Oncall
+# opencode-oncall
+
+[![npm version](https://img.shields.io/npm/v/opencode-oncall.svg)](https://www.npmjs.com/package/opencode-oncall)
+[![npm downloads](https://img.shields.io/npm/dw/opencode-oncall.svg)](https://www.npmjs.com/package/opencode-oncall)
+[![License: MPL-2.0](https://img.shields.io/badge/License-MPL--2.0-brightgreen.svg)](LICENSE)
+[![GitHub stars](https://img.shields.io/github/stars/jiwangyihao/opencode-oncall?style=social)](https://github.com/jiwangyihao/opencode-oncall/stargazers)
+
+套件导航 / Suite: [OpenCode J Super Suite](https://github.com/jiwangyihao/opencode-j-super-suite)
 
 `opencode-oncall` 是面向 OpenCode 的远程值守 UX 插件。它通过微信 slash-only 入口，把会话状态、待回复问题、权限确认、自然中止和恢复命令组织成离开电脑后仍可安全处理的工作流。
 
